@@ -9,11 +9,9 @@ root_width, root_height = 333, 400
 bg_color = '#74E77A'
 ListS = 2
 inputs = []
-sample = []
 batch = []
 batchsize = 3
 ButtonItter = 0
-batching = False
 
 
 
@@ -30,16 +28,30 @@ class MyButton:
     
     def grid_forget(self):
         self.x.grid_forget()
+
+
+class Layer:
+    def __init__(self, n_inputs, n_neurons):
+        self.weights = np.random.randn(n_inputs, n_neurons)
+        self.biases = np.zeros(n_neurons)
+    def forward(self, inputs):
+        self.output = np.dot(inputs, self.weights) + self.biases
+    def borward(self, inputs):
+        self.output = np.dot(inputs, self.weights) + self.biases
 class Layer_Dense:
-        def __init__(self, n_inputs, n_neurons):
-            self.weights = np.random.randn(n_inputs, n_neurons)
-            self.biases = np.zeros(n_neurons)
-        def forward(self, inputs):
-            self.output = np.dot(inputs, self.weights) + self.biases
+    def __init__(self, n_inputs, n_neurons):
+        self.weights = np.random.randn(n_inputs, n_neurons)
+        self.biases = np.zeros(n_neurons)
+    def forward(self, inputs):
+        self.output = np.dot(inputs, self.weights) + self.biases
+    def borward(self, inputs):
+        self.output = np.dot(inputs, self.weights) + self.biases
+
 
 class Activation_ReLu:
     def forward(self, inputs):
         self.output = np.maximum(0, inputs)
+
 
 class Activation_Softmax:
     def forward(self, inputs):
@@ -50,6 +62,7 @@ class Activation_Softmax:
 
 
 def Shorten():
+    global inputs
     inputs.clear()
     z=0
     Ratio = root.winfo_width()/root.winfo_height()
@@ -78,16 +91,12 @@ def Shorten():
 
 
 def Sample(event):
-    global batching, sample
     Shorten()
-    sample = inputs
-    batching = False
-    Neural(sample, batch, batching)
+    Neural()
 
 
 def Debug(event):
-    global batching, sample
-    batching = False
+    global inputs
 
     print(Positions)
     print(len(Positions))
@@ -114,21 +123,18 @@ def Debug(event):
     canvas.create_line(inputs[(ListS*2-1)-1], inputs[(ListS*2-1)], inputs[0], inputs[1])
 
     Shorten()
-    sample = inputs
-
-    Neural(sample, batch, batching)
+    Neural()
 
 
 def Batch(event):
-    global batch, batching, batchsize
-    batching = True
+    global batch, batchsize
     sampletap.grid_forget()
     debugtap.grid_forget()
     Shorten()
     batch.append(inputs.copy())
     canvas.create_rectangle(0, 0, root.winfo_width(), root.winfo_height(), fill=bg_color, outline=bg_color)
     if (len(batch) == batchsize):
-        Neural(sample, batch, batching)
+        NeuralBatch()
 
 
 def locate_xy(event):
@@ -146,10 +152,8 @@ def addLine(event):
     Positions.append(float(Pos[1]))
 
 
-
-
 def Neural():
-    dense1 = Layer_Dense(2,3)
+    dense1 = Layer_Dense(ListS*2)
     activation1 = Activation_ReLu
 
     dense2 = Layer_Dense(3, 2)
@@ -161,8 +165,33 @@ def Neural():
     dense2.forward(activation1.output)
     activation2.forward(dense2.output)
 
-    print(activation2.output[:5])
+    print(activation2.output)
 
+
+def NeuralBatch():
+    dense1 = [Layer_Dense(ListS,3),
+              Layer_Dense(ListS,3),
+              Layer_Dense(ListS,3)]
+    activation1 = [Activation_ReLu,
+                   Activation_ReLu,
+                   Activation_ReLu]
+
+    for i in range(0,3):
+        dense1[i].forward(inputs[i])
+        activation1[i].forward(dense1[i].output)
+    
+    dense2 = [Layer_Dense(3, 2),
+              Layer_Dense(3, 2),
+              Layer_Dense(3, 2)]
+    activation2 = [Activation_Softmax(),
+                   Activation_Softmax(),
+                   Activation_Softmax()]
+
+    for i in range(0,3):
+        dense2[i].forward(activation1[i].output)
+        activation2[i].forward(dense2[i].output)
+
+        print(activation2[i].output)
 
 
 
