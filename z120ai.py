@@ -12,7 +12,42 @@ inputs = []
 sample = []
 batch = []
 batchsize = 3
+ButtonItter = 0
 batching = False
+
+
+
+class MyButton:
+    def __init__(self, x_text, fn, root) -> None:
+        self.x = Button(root, text=x_text, fg='blue', width=18, command=fn)
+    
+    def Place(self):
+        global ButtonItter
+
+        ButtonItter += 1
+        root.rowconfigure(ButtonItter, pad=5)
+        self.x.grid(row=ButtonItter, column=0)
+    
+    def grid_forget(self):
+        self.x.grid_forget()
+class Layer_Dense:
+        def __init__(self, n_inputs, n_neurons):
+            self.weights = np.random.randn(n_inputs, n_neurons)
+            self.biases = np.zeros(n_neurons)
+        def forward(self, inputs):
+            self.output = np.dot(inputs, self.weights) + self.biases
+
+class Activation_ReLu:
+    def forward(self, inputs):
+        self.output = np.maximum(0, inputs)
+
+class Activation_Softmax:
+    def forward(self, inputs):
+        exp_values = np.exp(inputs - np.max(inputs, axis=1, keepdims=True))
+        probabilities = exp_values / np.sum(exp_values, axis=1, keepdims=True)
+        self.output = probabilities
+
+
 
 def Shorten():
     inputs.clear()
@@ -89,31 +124,11 @@ def Batch(event):
     batching = True
     sampletap.grid_forget()
     debugtap.grid_forget()
-    batchdebugtap.grid_forget()
-    #Batchsampletap = Button(root, text='batch', fg='blue', width=18, command=lambda: Batchsample(None))
-    #Batchsampletap.grid(row=1, column=0)
     Shorten()
     batch.append(inputs.copy())
     canvas.create_rectangle(0, 0, root.winfo_width(), root.winfo_height(), fill=bg_color, outline=bg_color)
     if (len(batch) == batchsize):
         Neural(sample, batch, batching)
-
-
-'''
-def Batchsample(event):
-    global batchcycle
-    inputs.clear()
-    Shorten()
-    f = open("./z120aiCache/"+str(batchcycle)+".txt", "w")
-    f.write(inputs)
-    batchcycle += 1
-    if(batchcycle >= batchsize):
-        exec(open("./Neural.py").read())
-'''
-
-
-def Batchdebug():
-    return
 
 
 def locate_xy(event):
@@ -132,30 +147,22 @@ def addLine(event):
 
 
 
-def Neural(sample, batch, batching):
-    if batching:
-        input = batch
-    else:
-        input = sample
 
-    layer1 = Layer_Dense(4,5)
-    activation1 = Activation_ReLu()
+def Neural():
+    dense1 = Layer_Dense(2,3)
+    activation1 = Activation_ReLu
 
-    layer1.forward(input)
+    dense2 = Layer_Dense(3, 2)
+    activation2 = Activation_Softmax()
 
-    activation1.forward(layer1.output)
-    print(activation1.output)
+    dense1.forward(inputs)
+    activation1.forward(dense1.output)
 
-class Layer_Dense:
-        def __init__(self, n_inputs, n_neurons):
-            self.weights = np.random.randn(n_inputs, n_neurons)
-            self.biases = np.zeros(n_neurons)
-        def forward(self, inputs):
-            self.output = np.dot(inputs, self.weights) + self.biases
+    dense2.forward(activation1.output)
+    activation2.forward(dense2.output)
 
-class Activation_ReLu:              #This is a ReLu
-    def forward(self, inputs):
-        self.output = np.maximum(0, inputs)
+    print(activation2.output[:5])
+
 
 
 
@@ -166,22 +173,17 @@ root.geometry((str(root_width) + 'x' + str(root_height)))
 
 root.rowconfigure(0, weight=1)
 root.columnconfigure(0, weight=1)
-root.rowconfigure(1, pad=5)
-root.rowconfigure(2, pad=5)
-root.rowconfigure(3, pad=5)
-root.rowconfigure(4, pad=5)
 
 canvas = Canvas(root, bg=bg_color)
 canvas.grid(row=0, column=0, sticky='nsew')
 
-sampletap = Button(root, text='sample', fg='blue', width=18, command=lambda: Sample(None))
-debugtap = Button(root, text='debug', fg='blue', width=18, command=lambda: Debug(None))
-batchtap = Button(root, text='batch', fg='blue', width=18, command=lambda: Batch(None))
-batchdebugtap = Button(root, text='batchdebug', fg='blue', width=18, command=lambda: Batchdebug(None))
-sampletap.grid(row=1, column=0)
-debugtap.grid(row=2, column=0)
-batchtap.grid(row=3, column=0)
-#batchdebugtap.grid(row=4, column=0)
+
+sampletap = MyButton('sample', lambda: Sample(None), root)
+sampletap.Place()
+debugtap = MyButton('debug', lambda: Debug(None), root)
+debugtap.Place()
+batchtap = MyButton('batch', lambda: Batch(None), root)
+batchtap.Place()
 
 canvas.bind('<1>', locate_xy)
 canvas.bind('<B1-Motion>', addLine)
