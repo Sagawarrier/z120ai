@@ -1,19 +1,32 @@
 import math
+from xml.sax.xmlreader import InputSource
+from more_itertools import sample
 import numpy as np
 from tkinter import *
 
-Positions = []
-Pos = []
-V = [0, 0]
-root_width, root_height = 333, 400
 bg_color = '#74E77A'
-ListS = 2
-inputs = []
+
+root = Tk()
+root.title("Binary number reader")
+root.geometry('333x400')
+root.rowconfigure(0, weight=1)
+root.columnconfigure(0, weight=1)
+canvas = Canvas(root, bg=bg_color)
+canvas.grid(row=0, column=0, sticky='nsew')
+
+Positions = []
+ListS = 32
 batch = []
 batchsize = 3
 ButtonItter = 0
+Current = []
 
 
+class Input:
+    def __init__(self) -> None:
+        pass
+    def Save(self):
+        pass
 
 class MyButton:
     def __init__(self, x_text, fn, root) -> None:
@@ -30,29 +43,19 @@ class MyButton:
         self.x.grid_forget()
 
 
-class Layer:
-    def __init__(self, n_inputs, n_neurons):
-        self.weights = np.random.randn(n_inputs, n_neurons)
-        self.biases = np.zeros(n_neurons)
-    def forward(self, inputs):
-        self.output = np.dot(inputs, self.weights) + self.biases
-    def borward(self, inputs):
-        self.output = np.dot(inputs, self.weights) + self.biases
 class Layer_Dense:
     def __init__(self, n_inputs, n_neurons):
-        self.weights = np.random.randn(n_inputs, n_neurons)
-        self.biases = np.zeros(n_neurons)
+        self.weights = 0.10 * np.random.randn(n_inputs, n_neurons)
+        self.biases = np.zeros((1, n_neurons))
     def forward(self, inputs):
         self.output = np.dot(inputs, self.weights) + self.biases
-    def borward(self, inputs):
-        self.output = np.dot(inputs, self.weights) + self.biases
+
 
 
 class Activation_ReLu:
     def forward(self, inputs):
         self.output = np.maximum(0, inputs)
-
-
+    
 class Activation_Softmax:
     def forward(self, inputs):
         exp_values = np.exp(inputs - np.max(inputs, axis=1, keepdims=True))
@@ -61,161 +64,109 @@ class Activation_Softmax:
 
 
 
-def Shorten():
-    global inputs
-    inputs.clear()
-    z=0
-    Ratio = root.winfo_width()/root.winfo_height()
-    if(Ratio<1):
-        z=1
-        Ratio = root.winfo_height()/root.winfo_width()
+class Sample:
+    def __init__(self) -> None:
+        self.data = []
+        self.dense1 = Layer_Dense(ListS*2, 3)
+        self.dense2 = Layer_Dense(3, 2)
+
+        self.activation1 = Activation_ReLu()
+        self.activation2 = Activation_Softmax()
+
+    def DrawtoScreen(self):
+        canvas.create_rectangle(0, 0, root.winfo_width(), root.winfo_height(), fill=bg_color, outline=bg_color)
+        for i in range(ListS-1):
+            i2=i*2
+            canvas.create_line(self.data[i2], self.data[i2+1], self.data[i2+2], self.data[i2+3])
+        canvas.create_line(self.data[(ListS*2-1)-1], self.data[(ListS*2-1)], self.data[0], self.data[1])
+    def Shorten(self):
+        temp = []
+
+        x = math.floor(len(self.data)/ListS)
+        if x%2 != 0 : x -= 1
+        for i in range(ListS):
+            temp.append(float(self.data[x*i]))
+            temp.append(float(self.data[x*i+1]))
+        
+        self.data = temp
+
     
-    x = math.floor(len(Positions)/ListS)
-    if x%2 == 0 :
-        for i in range(ListS):
-            if(z==0):
-                inputs.append((Positions[x*i]/root.winfo_width()*2-1))
-                inputs.append((Positions[x*i+1]/root.winfo_height()*2-1)*Ratio)
-            else:
-                inputs.append((Positions[x*i]/root.winfo_width()*2-1)*Ratio)
-                inputs.append((Positions[x*i+1]/root.winfo_height()*2-1))
-    else:
-        x -= 1
-        for i in range(ListS):
-            if(z==0):
-                inputs.append((Positions[x*i]/root.winfo_width()*2-1))
-                inputs.append((Positions[x*i+1]/root.winfo_height()*2-1)*Ratio)
-            else:
-                inputs.append((Positions[x*i]/root.winfo_width()*2-1)*Ratio)
-                inputs.append((Positions[x*i+1]/root.winfo_height()*2-1))
+    def write(self, value):
+        self.data.append(value)
 
 
-def Sample(event):
-    Shorten()
-    Neural()
+    def DoNeural(self):
+        self.Shorten()
+        root.destroy()
+
+        self.dense1.forward(self.data)
+        self.activation1.forward(self.dense1.output)
+
+        self.dense2.forward(self.activation1.output)
+        self.activation2.forward(self.dense2.output)
+
+        print(self.activation2.output)
+
+
+    def DoBatchNeural(self, batch):
+        root.destroy()
+
+        self.dense1.forward(batch)
+        self.activation1.forward(self.dense1.output)
+
+        self.dense2.forward(self.activation1.output)
+        self.activation2.forward(self.dense2.output)
+
+        print(self.activation2.output)
 
 
 def Debug(event):
-    global inputs
-
-    print(Positions)
-    print(len(Positions))
-
-    inputs.clear()
-    x = math.floor(len(Positions)/ListS)
-    if x%2 == 0 :
-        for i in range(ListS):
-            inputs.append(Positions[x*i])
-            inputs.append(Positions[x*i+1])
-    else:
-        x -= 1
-        for i in range(ListS):
-            inputs.append(Positions[x*i])
-            inputs.append(Positions[x*i+1])
-
-    print(inputs)
-    print(len(inputs))
-
-    canvas.create_rectangle(0, 0, root.winfo_width(), root.winfo_height(), fill=bg_color, outline=bg_color)
-    for i in range(ListS-1):
-        i2=i*2
-        canvas.create_line(inputs[i2], inputs[i2+1], inputs[i2+2], inputs[i2+3])
-    canvas.create_line(inputs[(ListS*2-1)-1], inputs[(ListS*2-1)], inputs[0], inputs[1])
-
-    Shorten()
-    Neural()
+    print(inputs.data)
+    print(len(inputs.data))
+    inputs.DrawtoScreen()
+    inputs.DoNeural()
 
 
 def Batch(event):
-    global batch, batchsize
+    global inputs
     sampletap.grid_forget()
     debugtap.grid_forget()
-    Shorten()
-    batch.append(inputs.copy())
+    if len(inputs.data) >  0 :
+        inputs.Shorten()
+        batch.append(inputs.data)
+        inputs = Sample()
     canvas.create_rectangle(0, 0, root.winfo_width(), root.winfo_height(), fill=bg_color, outline=bg_color)
     if (len(batch) == batchsize):
-        NeuralBatch()
-
-
-def locate_xy(event):
-    global Pos
-    Pos = [event.x, event.y]
-    Positions.append(float(Pos[0]))
-    Positions.append(float(Pos[1]))
-
-
-def addLine(event):
-    global Pos
-    canvas.create_line(Pos[0], Pos[1], event.x, event.y, fill='#000000', width=5)
-    Pos = [event.x, event.y]
-    Positions.append(float(Pos[0]))
-    Positions.append(float(Pos[1]))
-
-
-def Neural():
-    dense1 = Layer_Dense(ListS*2)
-    activation1 = Activation_ReLu
-
-    dense2 = Layer_Dense(3, 2)
-    activation2 = Activation_Softmax()
-
-    dense1.forward(inputs)
-    activation1.forward(dense1.output)
-
-    dense2.forward(activation1.output)
-    activation2.forward(dense2.output)
-
-    print(activation2.output)
-
-
-def NeuralBatch():
-    dense1 = [Layer_Dense(ListS,3),
-              Layer_Dense(ListS,3),
-              Layer_Dense(ListS,3)]
-    activation1 = [Activation_ReLu,
-                   Activation_ReLu,
-                   Activation_ReLu]
-
-    for i in range(0,3):
-        dense1[i].forward(inputs[i])
-        activation1[i].forward(dense1[i].output)
-    
-    dense2 = [Layer_Dense(3, 2),
-              Layer_Dense(3, 2),
-              Layer_Dense(3, 2)]
-    activation2 = [Activation_Softmax(),
-                   Activation_Softmax(),
-                   Activation_Softmax()]
-
-    for i in range(0,3):
-        dense2[i].forward(activation1[i].output)
-        activation2[i].forward(dense2[i].output)
-
-        print(activation2[i].output)
+        inputs.DoBatchNeural(batch)
 
 
 
-root = Tk()
+def LineCreate(event):
+    global Current
+    Current = [event.x, event.y]
+    inputs.write(Current[0])
+    inputs.write(Current[1])
 
-root.title("Paint")
-root.geometry((str(root_width) + 'x' + str(root_height)))
-
-root.rowconfigure(0, weight=1)
-root.columnconfigure(0, weight=1)
-
-canvas = Canvas(root, bg=bg_color)
-canvas.grid(row=0, column=0, sticky='nsew')
+def LineUpdate(event):
+    global Current
+    canvas.create_line(Current[0], Current[1], event.x, event.y, fill='#000000', width=5)
+    Current = [event.x, event.y]
+    inputs.data.append(event.x)
+    inputs.data.append(event.y)
 
 
-sampletap = MyButton('sample', lambda: Sample(None), root)
+
+inputs = Sample()
+
+sampletap = MyButton('sample', lambda: inputs.DoNeural(), root)
 sampletap.Place()
 debugtap = MyButton('debug', lambda: Debug(None), root)
 debugtap.Place()
 batchtap = MyButton('batch', lambda: Batch(None), root)
 batchtap.Place()
 
-canvas.bind('<1>', locate_xy)
-canvas.bind('<B1-Motion>', addLine)
+canvas.bind('<1>', LineCreate)
+canvas.bind('<B1-Motion>', LineUpdate)
 
 root.bind('<space>', Batch)
 
