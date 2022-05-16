@@ -1,6 +1,4 @@
 import math
-from xml.sax.xmlreader import InputSource
-from more_itertools import sample
 import numpy as np
 from tkinter import *
 
@@ -9,12 +7,12 @@ bg_color = '#74E77A'
 root = Tk()
 root.title("Binary number reader")
 root.geometry('333x400')
+root.resizable(False, False)
 root.rowconfigure(0, weight=1)
 root.columnconfigure(0, weight=1)
 canvas = Canvas(root, bg=bg_color)
 canvas.grid(row=0, column=0, sticky='nsew')
 
-Positions = []
 ListS = 32
 batch = []
 batchsize = 3
@@ -155,7 +153,6 @@ def LineUpdate(event):
     inputs.data.append(event.y)
 
 
-
 inputs = Sample()
 
 sampletap = MyButton('sample', lambda: inputs.DoNeural(), root)
@@ -167,7 +164,6 @@ batchtap.Place()
 
 canvas.bind('<1>', LineCreate)
 canvas.bind('<B1-Motion>', LineUpdate)
-
 root.bind('<space>', Batch)
 
 root.mainloop()
