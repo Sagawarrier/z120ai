@@ -57,8 +57,7 @@ class Activation_ReLu:
 class Activation_Softmax:
     def forward(self, inputs):
         exp_values = np.exp(inputs - np.max(inputs, axis=1, keepdims=True))
-        probabilities = exp_values / np.sum(exp_values, axis=1, keepdims=True)
-        self.output = probabilities
+        self.output = exp_values / np.sum(exp_values, axis=1, keepdims=True)
 
 
 
@@ -74,8 +73,7 @@ class Sample:
     def DrawtoScreen(self):
         canvas.create_rectangle(0, 0, root.winfo_width(), root.winfo_height(), fill=bg_color, outline=bg_color)
         for i in range(ListS-1):
-            i2=i*2
-            canvas.create_line(self.data[i2], self.data[i2+1], self.data[i2+2], self.data[i2+3])
+            canvas.create_line(self.data[i*2], self.data[i*2+1], self.data[i*2+2], self.data[i*2+3])
         canvas.create_line(self.data[(ListS*2-1)-1], self.data[(ListS*2-1)], self.data[0], self.data[1])
     def Shorten(self):
         temp = []
@@ -93,9 +91,10 @@ class Sample:
         self.data.append(value)
 
 
-    def DoNeural(self):
-        self.Shorten()
-        root.destroy()
+    def DoNeural(self, NotDebugging):
+        if NotDebugging:
+            root.destroy()
+            self.Shorten()
 
         self.dense1.forward(self.data)
         self.activation1.forward(self.dense1.output)
@@ -117,12 +116,13 @@ class Sample:
 
         print(self.activation2.output)
 
-
+ 
 def Debug(event):
     print(inputs.data)
     print(len(inputs.data))
+    inputs.Shorten()
     inputs.DrawtoScreen()
-    inputs.DoNeural()
+    inputs.DoNeural(False)
 
 
 def Batch(event):
@@ -155,7 +155,7 @@ def LineUpdate(event):
 
 inputs = Sample()
 
-sampletap = MyButton('sample', lambda: inputs.DoNeural(), root)
+sampletap = MyButton('sample', lambda: inputs.DoNeural(True), root)
 sampletap.Place()
 debugtap = MyButton('debug', lambda: Debug(None), root)
 debugtap.Place()
