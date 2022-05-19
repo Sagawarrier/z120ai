@@ -13,42 +13,21 @@ root.columnconfigure(0, weight=1)
 canvas = Canvas(root, bg=bg_color)
 canvas.grid(row=0, column=0, sticky='nsew')
 
-ListS = 32
+LIST_SIZE = 32
 batch = []
+batches = []
+redeemed = []
 batchsize = 3
-ButtonItter = 0
 Current = []
 
-
-class Input:
-    def __init__(self) -> None:
-        pass
-    def Save(self):
-        pass
-
-class MyButton:
-    def __init__(self, x_text, fn, root) -> None:
-        self.x = Button(root, text=x_text, fg='blue', width=18, command=fn)
-    
-    def Place(self):
-        global ButtonItter
-
-        ButtonItter += 1
-        root.rowconfigure(ButtonItter, pad=5)
-        self.x.grid(row=ButtonItter, column=0)
-    
-    def grid_forget(self):
-        self.x.grid_forget()
 
 
 class Layer_Dense:
     def __init__(self, n_inputs, n_neurons):
-        self.weights = 0.10 * np.random.randn(n_inputs, n_neurons)
+        self.weights = 0.030 * np.random.randn(n_inputs, n_neurons)
         self.biases = np.zeros((1, n_neurons))
     def forward(self, inputs):
         self.output = np.dot(inputs, self.weights) + self.biases
-
-
 
 class Activation_ReLu:
     def forward(self, inputs):
@@ -60,109 +39,159 @@ class Activation_Softmax:
         probabilites = exp_values / np.sum(exp_values, axis=1, keepdims=True)
         self.output = probabilites
 
-class _Loss:
-    def calculate(self, output, y):
-        sample_losses = self.forward(output, y)
-        data_loss = np.mean(sample_losses)
-        return data_loss
+class Input:
+    def __init__(self, value) -> None:
+        self.data = value
+    def Set(self, inputs):
+        self.data = inputs
 
-class _Loss_CategoricalCrossentropy(_Loss):
-    def forward(self, y_pred, y_true):
-        samples = len(y_pred)
-        y_pred_clipped = np.clip(y_pred, 1e-7, 1 - 1e-7)
+    def assign(self, value):
+        self.correct = value
 
-        if len(y_true.shape) == 1:
-            correct_confidences = y_pred_clipped[range(samples), y_true]
-        elif len(y_true.shape) == 2:
-            correct_confidences = np.sum(y_pred_clipped*y_true, axis = 1)
+    def DrawtoScreen(self):
+        data = Shorten(self.data)
+        canvas.create_rectangle(0, 0, root.winfo_width(), root.winfo_height(), fill=bg_color, outline=bg_color)
+        for i in range(LIST_SIZE-1):
+            canvas.create_line(data[i*2], data[i*2+1], data[i*2+2], data[i*2+3])
+        canvas.create_line(data[(LIST_SIZE*2-1)-1], data[(LIST_SIZE*2-1)], data[0], data[1])
 
-        negative_log_likelihoods = -np.log(correct_confidences)
-        return negative_log_likelihoods
+def Shorten(inputs):
+    new = []
+    x = math.floor(len(inputs)/LIST_SIZE)
+    if x%2 != 0 : x -= 1
+    for i in range(LIST_SIZE):
+        new.append(float(inputs[x*i]))
+        new.append(float(inputs[x*i+1]))
+    return new.copy()
 
 
-class Sample:
+class Network:
     def __init__(self) -> None:
-        self.data = []
-        self.dense1 = Layer_Dense(ListS*2, 3)
-        self.dense2 = Layer_Dense(3, 2)
+        self.layer1 = Layer_Dense(LIST_SIZE*2, 3)
+        self.layer2 = Layer_Dense(3, 2)
 
         self.activation1 = Activation_ReLu()
         self.activation2 = Activation_Softmax()
 
-    def DrawtoScreen(self):
-        canvas.create_rectangle(0, 0, root.winfo_width(), root.winfo_height(), fill=bg_color, outline=bg_color)
-        for i in range(ListS-1):
-            canvas.create_line(self.data[i*2], self.data[i*2+1], self.data[i*2+2], self.data[i*2+3])
-        canvas.create_line(self.data[(ListS*2-1)-1], self.data[(ListS*2-1)], self.data[0], self.data[1])
-    def Shorten(self):
-        temp = []
 
-        x = math.floor(len(self.data)/ListS)
-        if x%2 != 0 : x -= 1
-        for i in range(ListS):
-            temp.append(float(self.data[x*i]))
-            temp.append(float(self.data[x*i+1]))
-        
-        self.data = temp
+#class _Loss:
+#    def calculate(self, output, y):
+#        sample_losses = self.forward(output, y)
+#        data_loss = np.mean(sample_losses)
+#        return data_loss
 
-    
-    def write(self, value):
-        self.data.append(value)
+#class _Loss_CategoricalCrossentropy(_Loss):
+#    def forward(self, y_pred, y_true):
+#        samples = len(y_pred)
+#        y_pred_clipped = np.clip(y_pred, 1e-7, 1 - 1e-7)
 
+#        if len(y_true.shape) == 1:
+#            correct_confidences = y_pred_clipped[range(samples), y_true]
+#        elif len(y_true.shape) == 2:
+#            correct_confidences = np.sum(y_pred_clipped*y_true, axis = 1)
 
-    def DoNeural(self, NotDebugging):
-        if NotDebugging:
-            root.destroy()
-            self.Shorten()
-
-        self.dense1.forward(self.data)
-        self.activation1.forward(self.dense1.output)
-
-        self.dense2.forward(self.activation1.output)
-        self.activation2.forward(self.dense2.output)
-
-        print(self.activation2.output)
+#        negative_log_likelihoods = -np.log(correct_confidences)
+#        return negative_log_likelihoods
 
 
-    def DoBatchNeural(self, batch):
-        root.destroy()
-
-        self.dense1.forward(batch)
-        self.activation1.forward(self.dense1.output)
-
-        self.dense2.forward(self.activation1.output)
-        self.activation2.forward(self.dense2.output)
-
-        print(self.activation2.output)
-
-
-def Debug(event):
-    print(inputs.data)
-    print(len(inputs.data))
-    inputs.Shorten()
-    inputs.DrawtoScreen()
-    inputs.DoNeural(False)
-
-
-def Batch(event):
+def Save(event):
     global inputs
-    sampletap.grid_forget()
-    debugtap.grid_forget()
-    if len(inputs.data) >  0 :
-        inputs.Shorten()
-        batch.append(inputs.data)
-        inputs = Sample()
     canvas.create_rectangle(0, 0, root.winfo_width(), root.winfo_height(), fill=bg_color, outline=bg_color)
-    if (len(batch) == batchsize):
-        inputs.DoBatchNeural(batch)
+    batch.append(Input(inputs.data.copy()))
+    inputs = Input([])
+    if len(batch) == batchsize:
+        batches.append(batch.copy())
+        batch.clear()
+
+def Backpropagation(network, batch):
+    Calculate(network, batch)
+
+def Calculate(network, batch):
+    if len(batch) > 0:
+        network.layer1.forward(batch[0])
+        network.activation1.forward(network.layer1.output)
+
+        network.layer2.forward(network.activation1.output)
+        network.activation2.forward(network.layer2.output)
+
+        Calculated.append(network.activation2.output.copy())
+        batch.remove(batch[0])
+
+        print(network.activation2.output)
+        Backpropagation(network, batch)
+    else:
+        root.unbind('0')
+        root.unbind('1')
+        exit()
+
+
+def Generate_Button(button_title, command):
+    global button
+    button = Button(root, text=button_title, fg='blue', width=18, command=command)
+    root.rowconfigure(1, pad=5)
+    button.grid(row=1, column=0)
+
+def Redeem_Batch():
+    for i in range(0,3):
+        batch[i] = Shorten(batch[i].data)
+    redeemed.append(batch.copy())
+    batches.pop()
+
+def SetBatch():
+    if len(batches)>0:
+        global batch
+        batch = batches[len(batches)-1].copy()        
+    else:
+        global Calculated
+        Calculated = []
+        Calculate(Network(), redeemed)
+
+def Assign_Zero(event):
+    global root, i
+    if i == 3 :
+        Redeem_Batch()
+        SetBatch()
+        if len(batches)>0:
+            i = 0
+            batches[0][i].DrawtoScreen()
+            batches[0][i].assign(0)
+    else : 
+        batches[0][i].DrawtoScreen()
+        batches[0][i].assign(0)
+        i += 1
+
+def Assign_Full(event):
+    global root, i
+    if i == 3 :
+        Redeem_Batch()
+        SetBatch()
+        if len(batches)>0:
+            i = 0
+            batches[0][i].DrawtoScreen()
+            batches[0][i].assign(1)
+    else : 
+        batches[0][i].DrawtoScreen()
+        batches[0][i].assign(1)
+        i += 1
+        
+
+def Button1(event):
+    global i
+    SetBatch()
+    batch[0].DrawtoScreen()
+    button.grid_forget()
+    root.unbind('<space>')
+    i = 0
+    root.bind('0', Assign_Zero)
+    root.bind('1', Assign_Full)
 
 
 
 def LineCreate(event):
     global Current
     Current = [event.x, event.y]
-    inputs.write(Current[0])
-    inputs.write(Current[1])
+    inputs.data.append(Current[0])
+    inputs.data.append(Current[1])
 
 def LineUpdate(event):
     global Current
@@ -171,19 +200,11 @@ def LineUpdate(event):
     inputs.data.append(event.x)
     inputs.data.append(event.y)
 
-
-inputs = Sample()
-
-sampletap = MyButton('sample', lambda: inputs.DoNeural(True), root)
-sampletap.Place()
-debugtap = MyButton('debug', lambda: Debug(None), root)
-debugtap.Place()
-batchtap = MyButton('batch', lambda: Batch(None), root)
-batchtap.Place()
+Generate_Button('DO', lambda: Button1(None))
+inputs = Input([])
 
 canvas.bind('<1>', LineCreate)
 canvas.bind('<B1-Motion>', LineUpdate)
-root.bind('<space>', Batch)
+root.bind('<space>', Save)
 
 root.mainloop()
- 
