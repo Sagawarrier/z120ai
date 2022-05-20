@@ -173,7 +173,7 @@ def Assign_Full(event):
         batches[0][i].DrawtoScreen()
         batches[0][i].assign(1)
         i += 1
-        
+
 
 def Button1(event):
     global i
