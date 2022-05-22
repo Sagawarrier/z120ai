@@ -1,4 +1,5 @@
 import math
+from re import A
 import numpy as np
 from tkinter import *
 
@@ -73,11 +74,11 @@ class Network:
         self.activation1 = Activation_ReLu()
         self.activation2 = Activation_Softmax()
 
-    def set(self, layer1, layer2, activation1, activation2):
-        self.layer1 = layer1
-        self.layer2 = layer2
-        self.activation1 = activation1
-        self.activation2 = activation2
+    def set(self, layer1weights, layer1biases, layer2weights, layer2biases):
+        self.layer1.weights = layer1weights
+        self.layer1.biases = layer1biases
+        self.layer2.weights = layer2weights
+        self.layer2.biases = layer2biases
 
 
 
@@ -129,6 +130,7 @@ def Calculate(network, batch):
     else:
         root.unbind('0')
         root.unbind('1')
+        WriteFiles(network)
         exit()
 
 
@@ -144,6 +146,21 @@ def Redeem_Batch():
     redeemed.append(batch.copy())
     batches.pop()
     
+def ReadFiles(network):
+    try:
+        network.layer1.weights = np.load("layer1weights.npy")
+        network.layer1.biases = np.load("layer1biases.npy")
+        network.layer2.weights = np.load("layer2weights.npy")
+        network.layer2.biases = np.load("layer2biases.npy")
+    except:
+        pass
+
+def WriteFiles(network):
+    np.save("layer1weights.npy", network.layer1.weights)
+    np.save("layer1biases.npy", network.layer1.biases)
+    np.save("layer2weights.npy", network.layer2.weights)
+    np.save("layer2biases.npy", network.layer2.biases)
+
 
 def SetBatch():
     if len(batches)>0:
@@ -153,14 +170,7 @@ def SetBatch():
         global Calculated
         Calculated = []
         network = Network()
-        try:
-            layer1 = open("layer1.txt", "r")
-            layer2 = open("layer2.txt", "r")
-            activation1 = open("activation1.txt", "r")
-            activation2 = open("activation2.txt", "r") 
-            network.set(layer1.read(), layer2.read(), activation1.read(), activation2.read())
-        except:
-            pass
+        ReadFiles(network)
         Calculate(network, redeemed)
 
 def Assign_Zero(event):
