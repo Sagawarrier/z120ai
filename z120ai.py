@@ -73,6 +73,13 @@ class Network:
         self.activation1 = Activation_ReLu()
         self.activation2 = Activation_Softmax()
 
+    def set(self, layer1, layer2, activation1, activation2):
+        self.layer1 = layer1
+        self.layer2 = layer2
+        self.activation1 = activation1
+        self.activation2 = activation2
+
+
 
 #class _Loss:
 #    def calculate(self, output, y):
@@ -136,6 +143,7 @@ def Redeem_Batch():
         batch[i] = Shorten(batch[i].data)
     redeemed.append(batch.copy())
     batches.pop()
+    
 
 def SetBatch():
     if len(batches)>0:
@@ -144,7 +152,16 @@ def SetBatch():
     else:
         global Calculated
         Calculated = []
-        Calculate(Network(), redeemed)
+        network = Network()
+        try:
+            layer1 = open("layer1.txt", "r")
+            layer2 = open("layer2.txt", "r")
+            activation1 = open("activation1.txt", "r")
+            activation2 = open("activation2.txt", "r") 
+            network.set(layer1.read(), layer2.read(), activation1.read(), activation2.read())
+        except:
+            pass
+        Calculate(network, redeemed)
 
 def Assign_Zero(event):
     global root, i
