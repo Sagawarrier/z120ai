@@ -32,7 +32,7 @@ class Layer_Dense:
 class Activation_ReLu:
     def forward(self, inputs):
         self.output = np.maximum(0, inputs)
-    
+
 class Activation_Softmax:
     def forward(self, inputs):
         exp_values = np.exp(inputs - np.max(inputs, axis=1, keepdims=True))
@@ -107,8 +107,6 @@ def Calculate(network, batch):
         print(network.activation2.output)
         Backpropagation(network, batch)
     else:
-        root.unbind('0')
-        root.unbind('1')
         WriteFiles(network)
         exit()
 
@@ -124,7 +122,7 @@ def Redeem_Batch():
         batch[i] = Shorten(batch[i].data)
     redeemed.append(batch.copy())
     batches.pop()
-    
+  
 def ReadFiles(network):
     try:
         network.layer1.weights = np.load("layer1weights.npy")
